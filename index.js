@@ -5,41 +5,46 @@ const dboper = require("./operations");
 
 const dbname = "lernwerkstatt";
 
-MongoClient.connect(
-  url,
-  (err, client) => {
-    assert.equal(err, null);
+MongoClient.connect(url)
+  .then(client => {
+    //assert.equal(err, null);
 
     console.log("Connected!");
 
     const db = client.db(dbname);
 
-    dboper.insertDocument(db, { name: "Beta", level: 7 }, "elite", result => {
-      console.log("Inserted document:\n", result.ops);
+    dboper
+      .insertDocument(db, { name: "Beta", level: 7 }, "elite")
+      .then(result => {
+        console.log("Inserted document:\n", result.ops);
 
-      dboper.findDocuments(db, "elite", docs => {
+        return dboper.findDocuments(db, "elite");
+      })
+      .then(docs => {
         console.log("Found documents:\n", docs);
 
-        dboper.updateDocument(
+        return dboper.updateDocument(
           db,
-          { name: "Alpha" },
+          { name: "Beta" },
           { level: 9 },
-          "elite",
-          result => {
-            console.log("Updated document:\n", result.result);
-
-            dboper.findDocuments(db, "elite", docs => {
-              console.log("Found documents:\n", docs);
-
-              db.dropCollection("elite", result => {
-                console.log("Dropped collection: ", result);
-
-                client.close();
-              });
-            });
-          }
+          "elite"
         );
-      });
-    });
-  }
-);
+      })
+      .then(result => {
+        console.log("Updated document:\n", result.result);
+
+        return dboper.findDocuments(db, "elite");
+      })
+      .then(docs => {
+        console.log("Found documents:\n", docs);
+
+        return db.dropCollection("elite");
+      })
+      .then(result => {
+        console.log("Dropped collection: ", result);
+
+        client.close();
+      })
+      .catch(err => console.log(err));
+  })
+  .catch(err => console.log(err));
